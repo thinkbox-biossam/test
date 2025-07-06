@@ -19,7 +19,7 @@ interface DiceSelectorPanelProps {
 
 const DiceSelectorPanel: React.FC<DiceSelectorPanelProps> = ({ selected, toggle }) => {
   return (
-    <div className="dice-selector-panel" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
+    <div className="dice-selector-panel">
       {diceOptions.map(({ label, sides }) => {
         const isActive = !!selected[sides];
         return (
