@@ -19,18 +19,21 @@ interface DiceSelectorPanelProps {
 
 const DiceSelectorPanel: React.FC<DiceSelectorPanelProps> = ({ selected, toggle }) => {
   return (
-    <div className="dice-selector-panel">
-      {diceOptions.map(({ label, sides }) => (
-        <label key={sides} style={{ marginRight: '1rem' }}>
-          <input
-            type="checkbox"
-            checked={!!selected[sides]}
-            onChange={() => toggle(sides)}
-            style={{ marginRight: '0.25rem' }}
-          />
-          {label}
-        </label>
-      ))}
+    <div className="dice-selector-panel" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
+      {diceOptions.map(({ label, sides }) => {
+        const isActive = !!selected[sides];
+        return (
+          <button
+            key={sides}
+            type="button"
+            onClick={() => toggle(sides)}
+            className={`dice-toggle${isActive ? ' selected' : ''}`}
+            aria-pressed={isActive}
+          >
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
 };
