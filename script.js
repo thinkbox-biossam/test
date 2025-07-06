@@ -204,4 +204,254 @@ console.log(`
 🧪 테스트 방법:
 1. 먼저 test-simple.html을 열어서 기본 클릭이 작동하는지 확인
 2. 메인 게임에서 gameUtils.testClick()으로 가상 클릭 테스트
-`); 
+`);
+
+// Main JavaScript for Mendeleev Dice Simulator
+
+// DOM Elements
+const rollBtn = document.getElementById('roll-btn');
+const diceCheckboxes = document.querySelectorAll('input[name="dice"]');
+const multiplyDivideToggle = document.getElementById('multiply-divide');
+const resultsSection = document.getElementById('results');
+const diceResultsContainer = document.getElementById('dice-results');
+const calculationsSection = document.getElementById('calculations');
+const calculationsBody = document.getElementById('calculations-body');
+
+// Dice roll results storage
+let diceResults = {};
+
+// Event Listeners
+rollBtn.addEventListener('click', rollDice);
+
+// Main dice rolling function
+function rollDice() {
+    // Get selected dice
+    const selectedDice = Array.from(diceCheckboxes)
+        .filter(checkbox => checkbox.checked)
+        .map(checkbox => ({
+            type: `d${checkbox.value}`,
+            sides: parseInt(checkbox.value)
+        }));
+    
+    if (selectedDice.length === 0) {
+        alert('주사위를 선택해주세요!');
+        return;
+    }
+    
+    // Clear previous results
+    diceResults = {};
+    diceResultsContainer.innerHTML = '';
+    calculationsBody.innerHTML = '';
+    
+    // Roll each selected die
+    selectedDice.forEach(die => {
+        const result = rollSingleDie(die.sides);
+        diceResults[die.type] = result;
+        displayDiceResult(die.type, result);
+    });
+    
+    // Show results sections
+    resultsSection.style.display = 'block';
+    calculationsSection.style.display = 'block';
+    
+    // Calculate and display combinations
+    calculateCombinations();
+}
+
+// Roll a single die
+function rollSingleDie(sides) {
+    return Math.floor(Math.random() * sides) + 1;
+}
+
+// Display individual dice result
+function displayDiceResult(diceType, value) {
+    const diceElement = document.createElement('div');
+    diceElement.className = 'dice-result';
+    
+    const iconMap = {
+        'd4': '△',
+        'd6': '⬡',
+        'd8': '◆',
+        'd10': '⬢',
+        'd12': '⬟',
+        'd20': '⬢',
+        'd100': '%'
+    };
+    
+    const colorMap = {
+        'd4': '#e74c3c',
+        'd6': '#3498db',
+        'd8': '#9b59b6',
+        'd10': '#1abc9c',
+        'd12': '#f39c12',
+        'd20': '#e67e22',
+        'd100': '#34495e'
+    };
+    
+    diceElement.innerHTML = `
+        <div class="dice-result-icon" style="color: ${colorMap[diceType]}">${iconMap[diceType]}</div>
+        <div class="dice-result-value">${value}</div>
+        <div class="dice-result-type">${diceType}</div>
+    `;
+    
+    // Add rolling animation
+    diceElement.classList.add('rolling');
+    setTimeout(() => {
+        diceElement.classList.remove('rolling');
+    }, 500);
+    
+    diceResultsContainer.appendChild(diceElement);
+}
+
+// Calculate all possible combinations
+function calculateCombinations() {
+    const values = Object.values(diceResults);
+    const includeMultiplyDivide = multiplyDivideToggle.checked;
+    const calculations = [];
+    
+    // Single values
+    values.forEach(value => {
+        calculations.push({
+            formula: `${value}`,
+            result: value,
+            diceUsed: [value]
+        });
+    });
+    
+    // Two dice combinations
+    if (values.length >= 2) {
+        for (let i = 0; i < values.length; i++) {
+            for (let j = i + 1; j < values.length; j++) {
+                const a = values[i];
+                const b = values[j];
+                
+                // Addition
+                calculations.push({
+                    formula: `${a} + ${b}`,
+                    result: a + b,
+                    diceUsed: [a, b]
+                });
+                
+                // Subtraction (both directions)
+                calculations.push({
+                    formula: `${a} - ${b}`,
+                    result: a - b,
+                    diceUsed: [a, b]
+                });
+                
+                calculations.push({
+                    formula: `${b} - ${a}`,
+                    result: b - a,
+                    diceUsed: [a, b]
+                });
+                
+                if (includeMultiplyDivide) {
+                    // Multiplication
+                    calculations.push({
+                        formula: `${a} × ${b}`,
+                        result: a * b,
+                        diceUsed: [a, b]
+                    });
+                    
+                    // Division (both directions, avoiding division by zero)
+                    if (b !== 0) {
+                        calculations.push({
+                            formula: `${a} ÷ ${b}`,
+                            result: a / b,
+                            diceUsed: [a, b]
+                        });
+                    }
+                    
+                    if (a !== 0) {
+                        calculations.push({
+                            formula: `${b} ÷ ${a}`,
+                            result: b / a,
+                            diceUsed: [a, b]
+                        });
+                    }
+                }
+            }
+        }
+    }
+    
+    // Three or more dice combinations
+    if (values.length >= 3) {
+        // For simplicity, we'll do sequential operations
+        // You can expand this to include all permutations if needed
+        
+        // All addition
+        const sumAll = values.reduce((sum, val) => sum + val, 0);
+        calculations.push({
+            formula: values.join(' + '),
+            result: sumAll,
+            diceUsed: [...values]
+        });
+        
+        // Other complex combinations can be added here
+    }
+    
+    // Filter out duplicate results and invalid calculations
+    const uniqueCalculations = [];
+    const seenResults = new Set();
+    
+    calculations.forEach(calc => {
+        // Only include positive integers and reasonable decimal results
+        if (calc.result > 0 && calc.result <= 1000) {
+            const key = `${calc.result}-${calc.formula}`;
+            if (!seenResults.has(key)) {
+                seenResults.add(key);
+                uniqueCalculations.push(calc);
+            }
+        }
+    });
+    
+    // Sort by result value
+    uniqueCalculations.sort((a, b) => a.result - b.result);
+    
+    // Display calculations
+    displayCalculations(uniqueCalculations);
+}
+
+// Display calculation results
+function displayCalculations(calculations) {
+    calculationsBody.innerHTML = '';
+    
+    calculations.forEach(calc => {
+        const row = document.createElement('tr');
+        
+        // Round result for display if it's a decimal
+        const displayResult = Number.isInteger(calc.result) ? 
+            calc.result : 
+            calc.result.toFixed(2);
+        
+        // Get element information
+        const atomicNumber = Math.round(calc.result);
+        const element = getElement(atomicNumber);
+        
+        row.innerHTML = `
+            <td class="calculation-formula">${calc.formula}</td>
+            <td class="calculation-result">${displayResult}</td>
+            <td class="element-symbol">${element.symbol}</td>
+            <td class="element-name">${element.name}</td>
+        `;
+        
+        calculationsBody.appendChild(row);
+    });
+}
+
+// Add some visual feedback when hovering over dice options
+document.querySelectorAll('.dice-option').forEach(option => {
+    option.addEventListener('mouseenter', function() {
+        this.querySelector('.dice-icon').style.transform = 'scale(1.1)';
+    });
+    
+    option.addEventListener('mouseleave', function() {
+        if (!this.querySelector('input').checked) {
+            this.querySelector('.dice-icon').style.transform = 'scale(1)';
+        }
+    });
+});
+
+// Initialize - hide results sections
+resultsSection.style.display = 'none';
+calculationsSection.style.display = 'none'; 
